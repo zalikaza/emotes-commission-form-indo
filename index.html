@@ -1,0 +1,1566 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Komisi Emote YCH – by Ruikarou</title>
+
+<!--
+  ╔══════════════════════════════════════════════════════╗
+  ║           FILE & FOLDER SETUP INSTRUCTIONS           ║
+  ╠══════════════════════════════════════════════════════╣
+  ║  Letakkan semua file PNG di sebelah index.html:      ║
+  ║                                                      ║
+  ║   your-project/  (upload semua ini ke GitHub)        ║
+  ║   ├── index.html    ← file ini                       ║
+  ║   ├── banner.png    ← gambar banner                  ║
+  ║   ├── logo.png      ← logo kamu (muncul di receipt)  ║
+  ║   ├── 1.png                                          ║
+  ║   ├── 2.png                                          ║
+  ║   │   … (lanjut sampai 36.png)                       ║
+  ║   └── 36.png                                         ║
+  ║                                                      ║
+  ║  Kalau logo.png belum ada, receipt pakai placeholder.║
+  ║  Emote PNG sebaiknya berbentuk kotak (square).       ║
+  ╚══════════════════════════════════════════════════════╝
+-->
+
+<!-- Google Fonts: Baloo 2 (bubbly) + Nunito (body) -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet" />
+
+<!-- Receipt is now generated with pure Canvas 2D (no html2canvas needed) -->
+
+<style>
+  /* ─── CSS Variables ─────────────────────────────────── */
+  :root {
+    --bg:           #F9FBE7;
+    --card:         #DCEDC8;
+    --card-deep:    #C5E1A5;
+    --accent:       #9CCC65;
+    --accent-dark:  #7CB342;
+    --highlight:    #FFB300;
+    --highlight-lt: #FFE082;
+    --text:         #33691E;
+    --text-soft:    #558B2F;
+    --text-muted:   #8BC34A;
+    --white:        #FFFFFF;
+    --radius-xl:    28px;
+    --radius-pill:  999px;
+    --shadow-soft:  0 8px 32px rgba(104,159,56,.18);
+    --shadow-card:  0 4px 20px rgba(104,159,56,.12);
+    --glow:         0 0 0 6px rgba(156,204,101,.35), 0 0 24px rgba(156,204,101,.25);
+    --transition:   .22s cubic-bezier(.34,1.56,.64,1);
+  }
+
+  /* ─── Reset & Base ──────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 120px; /* space for fixed bar */
+    overflow-x: hidden;
+  }
+
+  /* subtle noise texture overlay */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ─── Typography ────────────────────────────────────── */
+  h1, h2, .bubbly { font-family: 'Baloo 2', cursive; }
+
+  /* ─── Banner ────────────────────────────────────────── */
+  .banner {
+    width: 100%;
+    max-height: 280px;
+    overflow: hidden;
+    border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+    box-shadow: var(--shadow-soft);
+    position: relative;
+    z-index: 1;
+  }
+  .banner img {
+    width: 100%;
+    height: 280px;
+    object-fit: cover;
+    display: block;
+  }
+  /* placeholder shown when banner.png isn't found */
+  .banner-placeholder {
+    width: 100%;
+    height: 280px;
+    background: linear-gradient(135deg, var(--card-deep) 0%, var(--accent) 60%, var(--highlight-lt) 100%);
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .banner-placeholder span {
+    font-family: 'Baloo 2', cursive;
+    font-size: 1.3rem;
+    color: var(--white);
+    opacity: .75;
+  }
+
+  /* ─── Main Wrapper ──────────────────────────────────── */
+  .wrapper {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 0 20px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ─── Title Section ─────────────────────────────────── */
+  .title-section {
+    text-align: center;
+    padding: 36px 16px 20px;
+  }
+  .title-section h1 {
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1.1;
+    letter-spacing: -.5px;
+  }
+  .title-section h1 span.leaf {
+    color: var(--accent-dark);
+  }
+  .title-by {
+    font-family: 'Baloo 2', cursive;
+    font-size: 1.1rem;
+    color: var(--text-soft);
+    margin-top: 4px;
+    font-weight: 600;
+  }
+  .sheet-link {
+    display: inline-block;
+    margin-top: 12px;
+    font-size: .9rem;
+    font-weight: 700;
+    color: var(--white);
+    background: var(--highlight);
+    padding: 6px 18px;
+    border-radius: var(--radius-pill);
+    text-decoration: none;
+    box-shadow: 0 4px 12px rgba(255,179,0,.3);
+    transition: transform var(--transition), box-shadow var(--transition), background var(--transition);
+  }
+  .sheet-link:hover {
+    background: #FFA000;
+    transform: translateY(-2px) scale(1.04);
+    box-shadow: 0 8px 20px rgba(255,160,0,.4);
+  }
+
+  /* ─── Section Label ─────────────────────────────────── */
+  .section-label {
+    font-family: 'Baloo 2', cursive;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-label .dot {
+    width: 10px; height: 10px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  /* ─── User Info Card ────────────────────────────────── */
+  .user-card {
+    background: var(--card);
+    border-radius: var(--radius-xl);
+    padding: 24px 28px;
+    margin: 8px 0 28px;
+    box-shadow: var(--shadow-card);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  @media (max-width: 540px) {
+    .user-card { grid-template-columns: 1fr; }
+  }
+
+  .field-group label {
+    font-size: .8rem;
+    font-weight: 700;
+    color: var(--text-soft);
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    white-space: normal;
+    line-height: 1.3;
+  }
+
+  .field-group input,
+  .field-group select {
+    appearance: none;
+    border: none;
+    outline: none;
+    background: var(--bg);
+    border-radius: 16px;
+    padding: 12px 16px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text);
+    box-shadow: 0 2px 8px rgba(104,159,56,.1);
+    transition: box-shadow var(--transition), transform var(--transition);
+    width: 100%;
+  }
+  .field-group input:focus,
+  .field-group select:focus {
+    box-shadow: 0 0 0 3px rgba(156,204,101,.4), 0 4px 16px rgba(104,159,56,.15);
+    transform: translateY(-1px);
+  }
+  .field-group select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23558B2F' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+    cursor: pointer;
+  }
+
+  /* ─── Emote Grid ────────────────────────────────────── */
+  .gallery-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .gallery-actions {
+    display: flex;
+    gap: 10px;
+  }
+
+  .btn-bubbly {
+    font-family: 'Baloo 2', cursive;
+    font-size: .95rem;
+    font-weight: 700;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    border-radius: var(--radius-pill);
+    padding: 10px 20px;
+    transition: transform var(--transition), box-shadow var(--transition), background var(--transition);
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    white-space: nowrap;
+  }
+  .btn-bubbly svg { flex-shrink: 0; }
+  .btn-pick {
+    background: var(--accent);
+    color: var(--white);
+    box-shadow: 0 4px 14px rgba(124,179,66,.35);
+  }
+  .btn-pick:hover {
+    background: var(--accent-dark);
+    transform: translateY(-3px) scale(1.06);
+    box-shadow: 0 8px 24px rgba(124,179,66,.45);
+  }
+  .btn-reset {
+    background: var(--highlight-lt);
+    color: var(--text);
+    box-shadow: 0 4px 14px rgba(255,179,0,.2);
+  }
+  .btn-reset:hover {
+    background: var(--highlight);
+    color: var(--white);
+    transform: translateY(-3px) scale(1.06);
+    box-shadow: 0 8px 24px rgba(255,160,0,.35);
+  }
+
+  /* ─── Order Summary ─────────────────────────────────── */
+  .order-summary { margin-bottom: 32px; }
+  .summary-table {
+    background: transparent;
+    border-radius: 20px;
+    border: 2px solid var(--card-deep);
+    overflow: hidden;
+  }
+  .summary-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 13px 20px;
+    gap: 12px;
+    border-bottom: 1px solid rgba(197,225,165,.5);
+  }
+  .summary-row:last-child { border-bottom: none; }
+  .sr-label {
+    font-size: .9rem;
+    font-weight: 600;
+    color: var(--text-soft);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .sr-value {
+    font-size: .9rem;
+    font-weight: 700;
+    color: var(--text);
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .sr-hint {
+    font-size: .75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    background: var(--card);
+    padding: 2px 9px;
+    border-radius: var(--radius-pill);
+  }
+  .sr-chip {
+    font-size: .72rem;
+    font-weight: 700;
+    background: var(--highlight);
+    color: var(--white);
+    padding: 2px 8px;
+    border-radius: var(--radius-pill);
+  }
+  .summary-row-commercial { background: rgba(255,248,225,.6); }
+  .summary-divider { height: 2px; background: var(--card-deep); }
+  .summary-row-total { background: var(--card); padding: 16px 20px; }
+  .sr-total {
+    font-family: 'Baloo 2', cursive;
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--accent-dark);
+  }
+
+  .emote-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+
+  /* Individual emote tile */
+  .emote-tile {
+    background: var(--card);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    transition: box-shadow var(--transition), background var(--transition);
+    box-shadow: var(--shadow-card);
+    user-select: none;
+    overflow: hidden;
+    aspect-ratio: 1;
+  }
+  .emote-tile::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(156,204,101,.55) 0%, transparent 75%);
+    opacity: 0;
+    transition: opacity .3s ease;
+    pointer-events: none;
+    border-radius: 20px;
+  }
+  .emote-tile:hover { box-shadow: var(--shadow-soft); background: var(--card-deep); }
+  .emote-tile.selected { background: var(--card-deep); box-shadow: var(--glow); }
+  .emote-tile.selected::before { opacity: 1; }
+
+  /* The img fills the tile; scale happens inside overflow:hidden so box never moves */
+  .emote-tile img {
+    width: 85%;
+    height: 85%;
+    object-fit: contain;
+    transition: transform var(--transition);
+    position: relative;
+    z-index: 1;
+    display: block;
+  }
+  .emote-tile:not(.selected):hover img { transform: scale(1.06) rotate(-2deg); }
+  .emote-tile.selected img { transform: scale(1.15); }
+
+  /* "Coming Soon" label for missing emotes */
+  .emote-soon {
+    font-family: 'Baloo 2', cursive;
+    font-size: .72rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-align: center;
+    white-space: pre;
+    line-height: 1.4;
+    position: relative;
+    z-index: 1;
+    pointer-events: none;
+  }
+  .emote-tile.no-img {
+    cursor: default;
+    opacity: .7;
+  }
+  .emote-tile.no-img:hover {
+    background: var(--card);
+    box-shadow: var(--shadow-card);
+  }
+
+  /* checkmark bubble */
+  .emote-check {
+    position: absolute;
+    top: 7px; right: 7px;
+    width: 20px; height: 20px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0;
+    transform: scale(0) rotate(-30deg);
+    transition: opacity .2s, transform var(--transition);
+    z-index: 2;
+    box-shadow: 0 2px 8px rgba(124,179,66,.4);
+  }
+  .emote-check svg { width: 11px; height: 11px; fill: none; stroke: #fff; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+  .emote-tile.selected .emote-check {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+
+  /* ─── Licensing Section ─────────────────────────────── */
+  .license-section {
+    margin-bottom: 32px;
+  }
+
+  .license-toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+
+  /* custom toggle switch */
+  .toggle-wrap {
+    display: flex; align-items: center; gap: 12px; cursor: pointer;
+  }
+  .toggle-wrap input[type="checkbox"] { display: none; }
+  .toggle-track {
+    width: 52px; height: 28px;
+    background: var(--card-deep);
+    border-radius: var(--radius-pill);
+    position: relative;
+    transition: background .25s;
+    flex-shrink: 0;
+    box-shadow: inset 0 2px 6px rgba(104,159,56,.15);
+  }
+  .toggle-thumb {
+    position: absolute;
+    top: 4px; left: 4px;
+    width: 20px; height: 20px;
+    background: var(--white);
+    border-radius: 50%;
+    box-shadow: 0 2px 6px rgba(0,0,0,.15);
+    transition: transform .25s cubic-bezier(.34,1.56,.64,1);
+  }
+  input[type="checkbox"]:checked ~ .toggle-track { background: var(--accent); }
+  input[type="checkbox"]:checked ~ .toggle-track .toggle-thumb {
+    transform: translateX(24px);
+  }
+  .toggle-label-text {
+    font-family: 'Baloo 2', cursive;
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--text);
+  }
+  .commercial-tag {
+    font-size: .8rem;
+    font-weight: 700;
+    background: var(--highlight);
+    color: var(--white);
+    padding: 3px 10px;
+    border-radius: var(--radius-pill);
+    box-shadow: 0 2px 8px rgba(255,179,0,.3);
+  }
+
+  /* Speech Bubble */
+  .speech-bubble {
+    position: relative;
+    background: var(--card);
+    border-radius: var(--radius-xl);
+    padding: 20px 24px;
+    box-shadow: var(--shadow-card);
+    transition: background .3s;
+  }
+  .speech-bubble::before {
+    content: '';
+    position: absolute;
+    top: -14px; left: 36px;
+    width: 26px; height: 16px;
+    background: var(--card);
+    clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+    transition: background .3s;
+  }
+  .speech-bubble.commercial {
+    background: #FFF8E1;
+  }
+  .speech-bubble.commercial::before {
+    background: #FFF8E1;
+  }
+
+  .terms-title {
+    font-family: 'Baloo 2', cursive;
+    font-weight: 800;
+    font-size: 1.05rem;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .terms-title .badge {
+    font-size: .75rem;
+    padding: 2px 10px;
+    border-radius: var(--radius-pill);
+    font-weight: 700;
+  }
+  .badge-personal { background: var(--card-deep); color: var(--text); }
+  .badge-commercial { background: var(--highlight); color: var(--white); }
+
+  .terms-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .terms-list li {
+    font-size: .9rem;
+    font-weight: 600;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    color: var(--text-soft);
+    line-height: 1.4;
+  }
+  .terms-list li::before {
+    content: '';
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    margin-top: 2px;
+    background-color: var(--accent);
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='7' r='3'/%3E%3Ccircle cx='7' cy='14' r='3'/%3E%3Ccircle cx='17' cy='14' r='3'/%3E%3Ccircle cx='12' cy='20' r='2.5'/%3E%3Ccircle cx='12' cy='12' r='2'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='7' r='3'/%3E%3Ccircle cx='7' cy='14' r='3'/%3E%3Ccircle cx='17' cy='14' r='3'/%3E%3Ccircle cx='12' cy='20' r='2.5'/%3E%3Ccircle cx='12' cy='12' r='2'/%3E%3C/svg%3E");
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    display: inline-block;
+  }
+
+  /* ─── Pricing Note ──────────────────────────────────── */
+  .pricing-note {
+    background: var(--card-deep);
+    border-radius: 20px;
+    padding: 16px 20px;
+    margin-bottom: 32px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    box-shadow: var(--shadow-card);
+  }
+  .pricing-note strong {
+    font-family: 'Baloo 2', cursive;
+    font-size: 1rem;
+    color: var(--text);
+  }
+  .price-chip {
+    background: var(--white);
+    border-radius: var(--radius-pill);
+    padding: 5px 14px;
+    font-weight: 700;
+    font-size: .9rem;
+    color: var(--text);
+    box-shadow: 0 2px 8px rgba(104,159,56,.12);
+  }
+
+  /* ─── Fixed Bottom Bar ──────────────────────────────── */
+  .action-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    background: rgba(197,225,165,.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    box-shadow: 0 -4px 24px rgba(104,159,56,.2);
+  }
+
+  .total-display {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.1;
+  }
+  .total-label {
+    font-size: .75rem;
+    font-weight: 700;
+    color: var(--text-soft);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+  }
+  .total-amount {
+    font-family: 'Baloo 2', cursive;
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--text);
+    transition: color .3s;
+  }
+
+  .btn-checkout {
+    font-family: 'Baloo 2', cursive;
+    font-size: 1.1rem;
+    font-weight: 800;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    border-radius: var(--radius-pill);
+    padding: 14px 36px;
+    background: var(--accent);
+    color: var(--white);
+    box-shadow: 0 6px 20px rgba(124,179,66,.45);
+    transition: transform var(--transition), box-shadow var(--transition), background var(--transition), opacity .25s;
+    letter-spacing: .02em;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-checkout::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,.25) 50%, transparent 70%);
+    transform: translateX(-100%);
+    transition: transform .5s ease;
+  }
+  .btn-checkout:not(:disabled):hover::after {
+    transform: translateX(100%);
+  }
+  .btn-checkout:not(:disabled):hover {
+    background: var(--accent-dark);
+    transform: translateY(-3px) scale(1.04);
+    box-shadow: 0 12px 32px rgba(124,179,66,.55);
+  }
+  .btn-checkout:disabled {
+    background: var(--card-deep);
+    color: var(--text-muted);
+    box-shadow: none;
+    cursor: not-allowed;
+    opacity: .7;
+    transform: none;
+  }
+
+  .count-badge {
+    display: inline-block;
+    background: rgba(255,255,255,.3);
+    border-radius: var(--radius-pill);
+    padding: 1px 8px;
+    font-size: .85rem;
+    margin-left: 4px;
+  }
+  .btn-checkout:disabled .count-badge {
+    background: rgba(104,159,56,.15);
+  }
+
+  /* ─── Subtle floating emojis decoration ─────────────── */
+  .deco {
+    position: fixed;
+    pointer-events: none;
+    z-index: 0;
+    animation: floatDeco 8s ease-in-out infinite;
+    line-height: 1;
+  }
+
+  @keyframes floatDeco {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50%       { transform: translateY(-18px) rotate(8deg); }
+  }
+
+  /* ─── Off-screen Receipt (for html2canvas) ──────────── */
+  #receipt-canvas-target {
+    position: fixed;
+    left: -9999px;
+    top: 0;
+    width: 600px;
+    background: #F9FBE7;
+    padding: 40px;
+    font-family: 'Nunito', sans-serif;
+    color: #33691E;
+    border-radius: 32px;
+  }
+
+  .receipt-header {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .receipt-header h2 {
+    font-family: 'Baloo 2', cursive;
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #33691E;
+    margin-bottom: 2px;
+  }
+  .receipt-header p {
+    color: #558B2F;
+    font-size: .95rem;
+    font-weight: 600;
+  }
+  .receipt-divider {
+    border: none;
+    border-top: 3px dashed #C5E1A5;
+    margin: 18px 0;
+  }
+  .receipt-info {
+    background: #DCEDC8;
+    border-radius: 18px;
+    padding: 16px 20px;
+    margin-bottom: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .receipt-info-row {
+    display: flex;
+    gap: 8px;
+    font-size: .9rem;
+  }
+  .receipt-info-row .ri-label {
+    font-weight: 700;
+    color: #558B2F;
+    min-width: 90px;
+  }
+  .receipt-info-row .ri-value {
+    font-weight: 600;
+    color: #33691E;
+  }
+  .receipt-emotes-label {
+    font-family: 'Baloo 2', cursive;
+    font-weight: 700;
+    font-size: 1rem;
+    color: #33691E;
+    margin-bottom: 12px;
+  }
+  .receipt-emotes-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .receipt-emote-thumb {
+    width: 72px;
+    height: 72px;
+    background: #DCEDC8;
+    border-radius: 14px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+  .receipt-emote-thumb img {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+  }
+  .receipt-emote-thumb span {
+    font-family: 'Baloo 2', cursive;
+    font-size: .7rem;
+    font-weight: 700;
+    color: #558B2F;
+    position: absolute;
+    bottom: 3px;
+    right: 5px;
+  }
+  .receipt-total-box {
+    background: #9CCC65;
+    border-radius: 18px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .receipt-total-box .rtb-label {
+    font-family: 'Baloo 2', cursive;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #fff;
+  }
+  .receipt-total-box .rtb-amount {
+    font-family: 'Baloo 2', cursive;
+    font-size: 2rem;
+    font-weight: 800;
+    color: #fff;
+  }
+  .receipt-footer {
+    text-align: center;
+    margin-top: 18px;
+    font-size: .8rem;
+    color: #8BC34A;
+    font-weight: 600;
+  }
+
+  /* ─── Bounce-in for newly selected tiles (img only, not tile box) ─── */
+  @keyframes imgPop {
+    0%   { transform: scale(.8); }
+    65%  { transform: scale(1.24); }
+    100% { transform: scale(1.18); }
+  }
+  .emote-tile.pop img { animation: imgPop .35s cubic-bezier(.34,1.56,.64,1) forwards; }
+
+  /* ─── Toast notification ────────────────────────────── */
+  .toast {
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--text);
+    color: var(--white);
+    font-family: 'Baloo 2', cursive;
+    font-size: .95rem;
+    font-weight: 700;
+    padding: 12px 24px;
+    border-radius: var(--radius-pill);
+    box-shadow: var(--shadow-soft);
+    opacity: 0;
+    transition: opacity .3s, transform .3s;
+    z-index: 200;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+</style>
+</head>
+<body>
+
+<!-- ─── Decorative floating icons ─── -->
+<span class="deco" style="top:10%;left:3%;">
+  <svg width="36" height="36" viewBox="0 0 24 24" fill="var(--accent)" opacity="0.18"><path d="M12 2C9.5 2 7 4 7 7c0 1.5.6 2.8 1.5 3.8C7.6 12 7 13.4 7 15c0 3 2.5 5 5 5s5-2 5-5c0-1.6-.6-3-1.5-4.2C16.4 9.8 17 8.5 17 7c0-3-2.5-5-5-5z"/></svg>
+</span>
+<span class="deco" style="top:30%;right:2%;">
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="var(--card-deep)" opacity="0.35"><path d="M12 22s-8-5.5-8-12a8 8 0 0 1 16 0c0 6.5-8 12-8 12z"/></svg>
+</span>
+<span class="deco" style="top:60%;left:1%;">
+  <svg width="44" height="44" viewBox="0 0 24 24" fill="var(--accent)" opacity="0.13"><circle cx="12" cy="7" r="3"/><circle cx="7" cy="12" r="3"/><circle cx="17" cy="12" r="3"/><circle cx="12" cy="17" r="3"/><circle cx="12" cy="12" r="2"/></svg>
+</span>
+<span class="deco" style="top:75%;right:3%;">
+  <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--accent-dark)" stroke-width="1.5" opacity="0.2"><path d="M12 22V12m0 0C12 7 7 4 3 6m9 6c0-5 5-8 9-6"/></svg>
+</span>
+<span class="deco" style="top:88%;left:6%;">
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="var(--highlight)" opacity="0.2"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+</span>
+
+<!-- ──────────────────────────────────────
+     1. TOP BANNER
+     Place your banner image at: assets/banner.png
+     Recommended: 1200×300 px or wider
+────────────────────────────────────── -->
+<div class="banner" id="banner-wrap">
+  <img id="banner-img"
+       src="banner.png"
+       alt="Ruikarou – YCH Emotes Commission Banner"
+       onerror="this.style.display='none'; document.getElementById('banner-placeholder').style.display='flex';"
+  />
+  <div class="banner-placeholder" id="banner-placeholder" style="display:none;">
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+    <span>Taruh Banner Disini</span>
+    <span style="font-size:.85rem;opacity:.6;">Letakkan banner.png di sebelah index.html</span>
+  </div>
+</div>
+
+<!-- ──────────────────────────────────────
+     2. TITLE SECTION
+────────────────────────────────────── -->
+<div class="wrapper">
+  <div class="title-section">
+    <h1>Komisi <span class="leaf">Emote</span> YCH</h1>
+    <p class="title-by">— by Ruikarou —</p>
+    <a class="sheet-link" href="#" target="_blank">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      baca commission sheet dulu ya sebelum beli
+    </a>
+  </div>
+
+  <!-- ──────────────────────────────────
+       3. USER INFO CARD
+  ─────────────────────────────────── -->
+  <p class="section-label"><span class="dot"></span> Info Kamu</p>
+  <div class="user-card">
+    <div class="field-group">
+      <label for="user-name">Nama / Username</label>
+      <input type="text" id="user-name" placeholder="contoh: @ruikarou" autocomplete="off" />
+    </div>
+    <div class="field-group">
+      <label for="user-platform">Kamu chat aku dimana?</label>
+      <select id="user-platform">
+        <option value="" disabled selected>Pilih platform yang kamu pake…</option>
+        <option value="Instagram">Instagram</option>
+        <option value="Twitter / X">Twitter / X</option>
+        <option value="Facebook">Facebook</option>
+        <option value="TikTok">TikTok</option>
+        <option value="Discord">Discord</option>
+        <option value="Lainnya">Lainnya</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- ──────────────────────────────────
+       4. EMOTE GALLERY
+  ─────────────────────────────────── -->
+  <div class="gallery-header">
+    <p class="section-label" style="margin-bottom:0;"><span class="dot"></span> Pilih Emote Kamu</p>
+    <div class="gallery-actions">
+      <button class="btn-bubbly btn-pick" id="btn-pick-all">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="12" cy="6" r="3.5"/><circle cx="6" cy="14" r="3.5"/><circle cx="18" cy="14" r="3.5"/><circle cx="12" cy="20.5" r="3"/><circle cx="12" cy="12" r="2"/></svg>
+        Pilih Semua
+      </button>
+      <button class="btn-bubbly btn-reset" id="btn-reset">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+        Reset
+      </button>
+    </div>
+  </div>
+
+  <!--
+    Emote grid is generated by JavaScript below.
+    It will load images from: assets/emotes/1.png … assets/emotes/36.png
+    If an image is missing, it shows a cute placeholder tile.
+  -->
+  <div class="emote-grid" id="emote-grid"></div>
+
+  <!-- ──────────────────────────────────
+       5. LICENSING & TERMS
+  ─────────────────────────────────── -->
+  <div class="license-section">
+    <p class="section-label"><span class="dot"></span> Lisensi</p>
+
+    <div class="license-toggle-row">
+      <label class="toggle-wrap" for="commercial-toggle">
+        <input type="checkbox" id="commercial-toggle" />
+        <div class="toggle-track"><div class="toggle-thumb"></div></div>
+        <span class="toggle-label-text">Lisensi Komersial</span>
+      </label>
+      <span class="commercial-tag">+50%</span>
+    </div>
+
+    <!-- Speech bubble shows terms based on toggle -->
+    <div class="speech-bubble" id="terms-bubble">
+      <div class="terms-title">
+        Penggunaan Personal
+        <span class="badge badge-personal" id="terms-badge">Personal</span>
+      </div>
+      <ul class="terms-list" id="terms-list">
+        <!-- Filled by JS -->
+      </ul>
+    </div>
+  </div>
+
+  <!-- ──────────────────────────────────
+       ORDER SUMMARY (realtime)
+  ─────────────────────────────────── -->
+  <div class="order-summary" id="order-summary">
+    <p class="section-label" style="margin-bottom:14px;"><span class="dot"></span> Ringkasan Order</p>
+    <div class="summary-table">
+      <div class="summary-row" id="sr-emotes">
+        <span class="sr-label">Emote yang dipilih</span>
+        <span class="sr-value" id="sr-emotes-val">— <span class="sr-hint">min. 5 buat checkout</span></span>
+      </div>
+      <div class="summary-row" id="sr-base">
+        <span class="sr-label">Harga dasar</span>
+        <span class="sr-value" id="sr-base-val">—</span>
+      </div>
+      <div class="summary-row summary-row-license" id="sr-license">
+        <span class="sr-label">Lisensi</span>
+        <span class="sr-value" id="sr-license-val">Personal</span>
+      </div>
+      <div class="summary-row summary-row-license summary-row-commercial" id="sr-commercial" style="display:none;">
+        <span class="sr-label">Biaya komersial <span class="sr-chip">+50%</span></span>
+        <span class="sr-value" id="sr-commercial-val">—</span>
+      </div>
+      <div class="summary-divider"></div>
+      <div class="summary-row summary-row-total">
+        <span class="sr-label">Total</span>
+        <span class="sr-value sr-total" id="sr-total-val">0k</span>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /.wrapper -->
+
+<!-- ──────────────────────────────────────
+     FIXED ACTION BAR (sticky bottom)
+────────────────────────────────────── -->
+<div class="action-bar">
+  <div class="total-display">
+    <span class="total-label">Total Kamu</span>
+    <span class="total-amount" id="total-display">0k</span>
+  </div>
+  <button class="btn-checkout" id="btn-checkout" disabled>
+    Checkout <span class="count-badge" id="checkout-count">0/36</span>
+  </button>
+</div>
+
+<!-- (Receipt is drawn directly on a hidden Canvas element, no DOM target needed) -->
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- ──────────────────────────────────────
+     JAVASCRIPT
+────────────────────────────────────── -->
+<script>
+/* ════════════════════════════════════════════
+   CONFIG — sesuaikan dengan harga kamu
+════════════════════════════════════════════ */
+const PRICE_PER_EMOTE      = 5;    // ribu rupiah (k) per emote
+const MIN_EMOTES           = 5;    // minimal pilihan
+const TOTAL_EMOTES         = 36;   // total tile di grid
+const COMMERCIAL_MULTIPLIER = 1.5; // 1.5 = +50%
+
+const EMOTES_PATH = ''; // file emote ada di sebelah index.html
+// Nama file yang dicoba: '1.PNG', '2.PNG' dst (uppercase, sesuai upload GitHub)
+// Kalau pakai lowercase .png juga works — kode otomatis coba keduanya
+const EMOTES_EXT  = '.png'; // ganti ke '.png' kalau file kamu lowercase
+
+/* ────── Konten terms ────── */
+const TERMS = {
+  personal: [
+    'Cuma buat penggunaan personal aja, bukan komersial',
+    'Boleh pake di stream pribadi & sosmed kamu',
+    'Credit ke Ruikarou (@ruikarou) diapresiasin banget!',
+    'Ga boleh jual lagi atau bagiin artworknya',
+    'Jangan ngaku-ngaku kalau itu karya kamu sendiri',
+    'Edit buat keperluan personal boleh asal izin dulu',
+  ],
+  commercial: [
+    'Termasuk semua hak Penggunaan Personal',
+    'Boleh dipake di stream yang dimonetisasi & akun bisnis',
+    'Boleh dipake buat merch dan cetak komersial',
+    'Credit ke Ruikarou tetep wajib di channel/bio kamu',
+    'Lisensi cuma berlaku buat satu entitas/channel doang',
+    'Ga boleh sub-licensing atau jual lagi artworknya',
+  ],
+};
+
+/* ════════════════════════════════════════════
+   STATE
+════════════════════════════════════════════ */
+let selected   = new Set();   // indices of selected emote tiles (1-based)
+let isCommercial = false;
+
+/* ════════════════════════════════════════════
+   DOM REFERENCES
+════════════════════════════════════════════ */
+const grid          = document.getElementById('emote-grid');
+const btnPickAll    = document.getElementById('btn-pick-all');
+const btnReset      = document.getElementById('btn-reset');
+const btnCheckout   = document.getElementById('btn-checkout');
+const totalDisplay  = document.getElementById('total-display');
+const checkoutCount = document.getElementById('checkout-count');
+const nameInput     = document.getElementById('user-name');
+const platformSel   = document.getElementById('user-platform');
+const commToggle    = document.getElementById('commercial-toggle');
+const termsBubble   = document.getElementById('terms-bubble');
+const termsBadge    = document.getElementById('terms-badge');
+const termsList     = document.getElementById('terms-list');
+const toast         = document.getElementById('toast');
+
+/* ════════════════════════════════════════════
+   BUILD EMOTE GRID
+════════════════════════════════════════════ */
+function buildGrid() {
+  grid.innerHTML = '';
+  for (let i = 1; i <= TOTAL_EMOTES; i++) {
+    const tile = document.createElement('div');
+    tile.className = 'emote-tile';
+    tile.dataset.index = i;
+    tile.dataset.tile  = i;  // used by receipt to find the img element
+
+    tile.innerHTML = `
+      <div class="emote-check">
+        <svg viewBox="0 0 12 12"><polyline points="1.5,6 4.5,9 10.5,3"/></svg>
+      </div>
+      <img src="${EMOTES_PATH}${i}${EMOTES_EXT}"
+           alt="Emote ${i}"
+           loading="lazy"
+           data-index="${i}"
+      />
+    `;
+
+    /* When image fails to load, swap it for a "Coming Soon" label */
+    const imgEl = tile.querySelector('img');
+    imgEl.onerror = function() {
+      this.remove();
+      const soon = document.createElement('span');
+      soon.className = 'emote-soon';
+      soon.textContent = 'Coming\nSoon';
+      tile.appendChild(soon);
+      tile.style.cursor = 'default';
+      tile.classList.add('no-img');
+    };
+
+    tile.addEventListener('click', () => {
+      if (tile.classList.contains('no-img')) return;
+      toggleTile(tile, i);
+    });
+    grid.appendChild(tile);
+  }
+}
+
+function toggleTile(tile, index) {
+  if (selected.has(index)) {
+    selected.delete(index);
+    tile.classList.remove('selected', 'pop');
+  } else {
+    selected.add(index);
+    tile.classList.remove('pop');
+    void tile.offsetWidth; // reflow to restart animation
+    tile.classList.add('selected', 'pop');
+  }
+  updateUI();
+}
+
+/* ════════════════════════════════════════════
+   UI UPDATES
+════════════════════════════════════════════ */
+function updateUI() {
+  const count = selected.size;
+  const name  = nameInput.value.trim();
+  const base  = count * PRICE_PER_EMOTE;
+  const total = calculateTotal();
+  const commercialFee = isCommercial ? Math.round(base * (COMMERCIAL_MULTIPLIER - 1)) : 0;
+  const canCheckout = name.length > 0 && count >= MIN_EMOTES;
+
+  /* sync tile visual state */
+  document.querySelectorAll('.emote-tile').forEach(tile => {
+    const i = parseInt(tile.dataset.index);
+    if (selected.has(i)) tile.classList.add('selected');
+    else tile.classList.remove('selected', 'pop');
+  });
+
+  /* action bar total */
+  totalDisplay.textContent = `${total}k`;
+  totalDisplay.style.color = total > 0 ? 'var(--accent-dark)' : 'var(--text)';
+
+  /* checkout button — count shows selected/total */
+  const countBadge = document.getElementById('checkout-count');
+  if (countBadge) countBadge.textContent = `${count}/${TOTAL_EMOTES}`;
+  btnCheckout.disabled = !canCheckout;
+
+  /* ── Order Summary table ── */
+  const srEmotesVal   = document.getElementById('sr-emotes-val');
+  const srBaseVal     = document.getElementById('sr-base-val');
+  const srLicenseVal  = document.getElementById('sr-license-val');
+  const srCommercial  = document.getElementById('sr-commercial');
+  const srCommercialVal = document.getElementById('sr-commercial-val');
+  const srTotalVal    = document.getElementById('sr-total-val');
+
+  if (count === 0) {
+    srEmotesVal.innerHTML = `— <span class="sr-hint">min. ${MIN_EMOTES} buat checkout</span>`;
+    srBaseVal.textContent = '—';
+  } else if (count < MIN_EMOTES) {
+    srEmotesVal.innerHTML = `${count} emote <span class="sr-hint">butuh ${MIN_EMOTES - count} lagi</span>`;
+    srBaseVal.textContent = `${count} × ${PRICE_PER_EMOTE}k = ${base}k`;
+  } else {
+    srEmotesVal.textContent = `${count} emote`;
+    srBaseVal.textContent = `${count} × ${PRICE_PER_EMOTE}k = ${base}k`;
+  }
+
+  srLicenseVal.textContent = isCommercial ? 'Komersial' : 'Personal';
+  if (isCommercial) {
+    srCommercial.style.display = 'flex';
+    srCommercialVal.textContent = `+${commercialFee}k`;
+  } else {
+    srCommercial.style.display = 'none';
+  }
+  srTotalVal.textContent = `${total}k`;
+}
+
+function calculateTotal() {
+  const base = selected.size * PRICE_PER_EMOTE;
+  return isCommercial ? Math.round(base * COMMERCIAL_MULTIPLIER) : base;
+}
+
+/* ════════════════════════════════════════════
+   BUTTONS
+════════════════════════════════════════════ */
+btnPickAll.addEventListener('click', () => {
+  for (let i = 1; i <= TOTAL_EMOTES; i++) selected.add(i);
+  updateUI();
+  showToast('Semua 36 emote dipilih!');
+});
+
+btnReset.addEventListener('click', () => {
+  selected.clear();
+  updateUI();
+  showToast('Pilihan direset');
+});
+
+nameInput.addEventListener('input', updateUI);
+
+/* ════════════════════════════════════════════
+   COMMERCIAL TOGGLE
+════════════════════════════════════════════ */
+commToggle.addEventListener('change', () => {
+  isCommercial = commToggle.checked;
+  renderTerms();
+  updateUI();
+});
+
+function renderTerms() {
+  const key = isCommercial ? 'commercial' : 'personal';
+  termsBubble.classList.toggle('commercial', isCommercial);
+  termsBadge.textContent  = isCommercial ? 'Komersial' : 'Personal';
+  termsBadge.className    = `badge ${isCommercial ? 'badge-commercial' : 'badge-personal'}`;
+  document.querySelector('.terms-title').firstChild.textContent = isCommercial ? 'Penggunaan Komersial ' : 'Penggunaan Personal ';
+
+  termsList.innerHTML = TERMS[key]
+    .map(t => `<li>${t}</li>`)
+    .join('');
+}
+
+/* ════════════════════════════════════════════
+   IMAGE LOADING — XHR Blob → ObjectURL → Canvas → dataURL
+   
+   Ini satu-satunya cara yang works di Chrome file://
+   karena objectURL dari blob tidak kena tainted canvas.
+════════════════════════════════════════════ */
+
+const imageCache = new Map(); // src → dataURL
+
+function xhrBlob(src) {
+  return new Promise(resolve => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', src, true);
+    xhr.responseType = 'blob';
+    xhr.onload = () => {
+      // status 0 = success on file://
+      if ((xhr.status === 200 || xhr.status === 0) && xhr.response && xhr.response.size > 0) {
+        resolve(xhr.response);
+      } else {
+        resolve(null);
+      }
+    };
+    xhr.onerror = () => resolve(null);
+    xhr.ontimeout = () => resolve(null);
+    xhr.timeout = 3000;
+    xhr.send();
+  });
+}
+
+async function srcToDataURL(src) {
+  if (imageCache.has(src)) return imageCache.get(src);
+  
+  // Coba semua variasi nama (case-insensitive)
+  const variants = [src];
+  if (src.endsWith('.png')) variants.push(src.slice(0,-4) + '.PNG');
+  if (src.endsWith('.PNG')) variants.push(src.slice(0,-4) + '.png');
+
+  for (const s of variants) {
+    const blob = await xhrBlob(s);
+    if (!blob) continue;
+    const blobURL = URL.createObjectURL(blob);
+    const dataURL = await new Promise(res => {
+      const img = new Image();
+      img.onload = () => {
+        const oc = document.createElement('canvas');
+        oc.width = img.naturalWidth || 256;
+        oc.height = img.naturalHeight || 256;
+        oc.getContext('2d').drawImage(img, 0, 0);
+        URL.revokeObjectURL(blobURL);
+        res(oc.toDataURL('image/png'));
+      };
+      img.onerror = () => { URL.revokeObjectURL(blobURL); res(null); };
+      img.src = blobURL;
+    });
+    if (dataURL) {
+      imageCache.set(src, dataURL);
+      return dataURL;
+    }
+  }
+  return null;
+}
+
+async function dataURLtoImg(dataURL) {
+  return new Promise((res, rej) => {
+    if (!dataURL) return rej();
+    const img = new Image();
+    img.onload = () => res(img);
+    img.onerror = () => rej();
+    img.src = dataURL;
+  });
+}
+
+function rRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, h, r);
+}
+
+/* Pre-load semua gambar ke cache saat halaman load */
+async function preloadImages() {
+  const jobs = [];
+  for (let i = 1; i <= TOTAL_EMOTES; i++) {
+    jobs.push(srcToDataURL(`${EMOTES_PATH}${i}${EMOTES_EXT}`));
+  }
+  jobs.push(srcToDataURL('logo.png'));
+  jobs.push(srcToDataURL('logo.PNG'));
+  await Promise.all(jobs);
+}
+
+btnCheckout.addEventListener('click', async () => {
+  const name       = nameInput.value.trim();
+  const platform   = platformSel.value || 'Ga disebutin';
+  const count      = selected.size;
+  const total      = calculateTotal();
+  const licenseTag = isCommercial ? 'Komersial (+50%)' : 'Personal';
+  const now        = new Date().toLocaleDateString('id-ID', { year:'numeric', month:'long', day:'numeric' });
+  const sortedSel  = [...selected].sort((a,b)=>a-b);
+
+  btnCheckout.textContent = 'Lagi bikin…';
+  btnCheckout.disabled = true;
+
+  // Wait for web fonts to be ready so canvas uses Baloo 2 + Nunito
+  try { await document.fonts.ready; } catch(e) {}
+
+  try {
+    /* ── Ambil logo dari cache */
+    const logoDataURL = imageCache.get('logo.png') || imageCache.get('logo.PNG') || null;
+    let logoImg = null;
+    if (logoDataURL) {
+      try { logoImg = await dataURLtoImg(logoDataURL); } catch(e) {}
+    }
+
+    /* ── Ambil emote images dari cache → Image elements */
+    const emoteImgEls = await Promise.all(sortedSel.map(async i => {
+      const dataURL = imageCache.get(`${EMOTES_PATH}${i}${EMOTES_EXT}`) || null;
+      if (!dataURL) return { img: null, ok: false, index: i };
+      try {
+        const img = await dataURLtoImg(dataURL);
+        return { img, ok: true, index: i };
+      } catch(e) {
+        return { img: null, ok: false, index: i };
+      }
+    }));
+
+    /* ── Layout */
+    const W      = 600;
+    const PAD    = 44;
+    const INNER  = W - PAD * 2;
+    const COLS   = 5;              // selalu 5 kolom
+    const GAP    = 10;
+    const THUMB  = Math.floor((INNER - GAP * (COLS - 1)) / COLS); // pas penuh
+    const tRows  = Math.ceil(emoteImgEls.length / COLS);
+    const THUMB_H = tRows * (THUMB + GAP);
+
+    const LOGO_H  = logoImg ? 80 : 56;
+    const H = PAD
+      + LOGO_H + 16
+      + 30 + 22               // title + subtitle
+      + 22 + 3 + 20           // divider
+      + 148                   // info box
+      + 22
+      + 22 + 12               // "Selected Emotes" label
+      + THUMB_H
+      + 22
+      + 64                    // total bar
+      + 20
+      + 22                    // footer
+      + PAD;
+
+    const canvas = document.createElement('canvas');
+    canvas.width  = W * 2;
+    canvas.height = H * 2;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(2, 2);
+
+    /* ── Background */
+    ctx.fillStyle = '#F9FBE7';
+    rRect(ctx, 0, 0, W, H, 28); ctx.fill();
+
+    let y = PAD;
+    ctx.textAlign = 'center';
+
+    /* ── Logo */
+    if (logoImg) {
+      const maxW = 160, maxH = 80;
+      const iw = logoImg.naturalWidth || 160;
+      const ih = logoImg.naturalHeight || 80;
+      const scale = Math.min(maxW / iw, maxH / ih, 1);
+      const lw = iw * scale, lh = ih * scale;
+      ctx.drawImage(logoImg, W/2 - lw/2, y, lw, lh);
+      y += lh + 16;
+    } else {
+      ctx.fillStyle = '#C5E1A5';
+      rRect(ctx, W/2 - 52, y, 104, 44, 12); ctx.fill();
+      ctx.fillStyle = '#558B2F';
+      ctx.font = 'bold 12px sans-serif';
+      ctx.fillText('logo.png', W/2, y + 27);
+      y += 56;
+    }
+
+    /* ── Title */
+    ctx.fillStyle = '#33691E';
+    ctx.font = 'bold 22px "Baloo 2", cursive';
+    ctx.fillText('Komisi Emote YCH', W/2, y + 22);
+    y += 30;
+
+    ctx.fillStyle = '#558B2F';
+    ctx.font = '600 13px "Nunito", sans-serif';
+    ctx.fillText('by Ruikarou — Bukti Order', W/2, y + 14);
+    y += 22;
+
+    /* ── Divider */
+    y += 14;
+    ctx.setLineDash([8, 6]);
+    ctx.strokeStyle = '#C5E1A5';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke();
+    ctx.setLineDash([]);
+    y += 20;
+
+    /* ── Info box */
+    const INFO_H = 148;
+    ctx.fillStyle = '#DCEDC8';
+    rRect(ctx, PAD, y, INNER, INFO_H, 16); ctx.fill();
+
+    const rows = [
+      ['Klien',    name],
+      ['Platform', platform],
+      ['Tanggal',  now],
+      ['Lisensi',  licenseTag],
+      ['Jumlah',   `${count} emote × ${PRICE_PER_EMOTE}k /emote`],
+    ];
+    let iy = y + 26;
+    for (const [label, val] of rows) {
+      ctx.textAlign = 'left';
+      ctx.font = 'bold 13px "Nunito", sans-serif';
+      ctx.fillStyle = '#558B2F';
+      ctx.fillText(label, PAD + 18, iy);
+      ctx.font = '700 13px "Nunito", sans-serif';
+      ctx.fillStyle = '#33691E';
+      ctx.fillText(val, PAD + 110, iy);
+      iy += 24;
+    }
+    y += INFO_H + 22;
+
+    /* ── "Selected Emotes:" label */
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#33691E';
+    ctx.font = 'bold 14px "Baloo 2", cursive';
+    ctx.fillText('Emote yang Dipilih:', PAD, y + 14);
+    y += 22 + 12;
+
+    /* ── Thumbnails */
+    for (let idx = 0; idx < emoteImgEls.length; idx++) {
+      const col = idx % COLS;
+      const row = Math.floor(idx / COLS);
+      const tx = PAD + col * (THUMB + GAP);
+      const ty = y + row * (THUMB + GAP);
+
+      ctx.fillStyle = '#DCEDC8';
+      rRect(ctx, tx, ty, THUMB, THUMB, 12); ctx.fill();
+
+      const { img, ok, index } = emoteImgEls[idx];
+      if (ok && img) {
+        ctx.save();
+        rRect(ctx, tx, ty, THUMB, THUMB, 12);
+        ctx.clip();
+        const m = 5;
+        ctx.drawImage(img, tx + m, ty + m, THUMB - m*2, THUMB - m*2);
+        ctx.restore();
+      } else {
+        ctx.fillStyle = '#8BC34A';
+        ctx.font = 'bold 11px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(`#${index}`, tx + THUMB/2, ty + THUMB/2 + 4);
+      }
+    }
+    y += THUMB_H + 22;
+
+    /* ── Total bar */
+    ctx.fillStyle = '#9CCC65';
+    rRect(ctx, PAD, y, INNER, 64, 16); ctx.fill();
+    ctx.fillStyle = '#FFFFFF';
+    ctx.textAlign = 'left';
+    ctx.font = 'bold 15px "Baloo 2", cursive';
+    ctx.fillText('Total', PAD + 20, y + 38);
+    ctx.textAlign = 'right';
+    ctx.font = 'bold 26px "Baloo 2", cursive';
+    ctx.fillText(`${total}k`, W - PAD - 20, y + 42);
+    y += 64 + 20;
+
+    /* ── Footer */
+    ctx.fillStyle = '#8BC34A';
+    ctx.font = '600 11px "Nunito", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Makasih udah komisi ke Ruikarou!  •  Tolong kirim bukti ini pas submit order ya.', W/2, y + 12);
+
+    /* ── Download */
+    const link = document.createElement('a');
+    link.download = `ruikarou-receipt-${name.replace(/\W+/g,'_')}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    showToast('Bukti order udah didownload!');
+
+  } catch (err) {
+    console.error('Receipt error:', err);
+    showToast('Gabisa bikin bukti order.');
+  } finally {
+    btnCheckout.innerHTML = `Checkout <span class="count-badge" id="checkout-count">${selected.size}/${TOTAL_EMOTES}</span>`;
+    updateUI();
+  }
+});
+
+/* ════════════════════════════════════════════
+   TOAST
+════════════════════════════════════════════ */
+let toastTimer;
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 2800);
+}
+
+/* ════════════════════════════════════════════
+   HELPERS
+════════════════════════════════════════════ */
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ════════════════════════════════════════════
+   INIT
+════════════════════════════════════════════ */
+buildGrid();
+renderTerms();
+updateUI();
+// Pre-load semua gambar ke cache via XHR blob (works di file://)
+preloadImages();
+</script>
+</body>
+</html>
