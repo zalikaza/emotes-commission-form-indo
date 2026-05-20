@@ -1426,12 +1426,12 @@ btnCheckout.addEventListener('click', async () => {
     /* ── Title */
     ctx.fillStyle = '#33691E';
     ctx.font = 'bold 22px "Baloo 2", cursive';
-    ctx.fillText('Komisi Emote YCH', W/2, y + 22);
+    ctx.fillText('Emotes Commission', W/2, y + 22);
     y += 30;
 
     ctx.fillStyle = '#558B2F';
     ctx.font = '600 13px "Nunito", sans-serif';
-    ctx.fillText('by Ruikarou — Bukti Order', W/2, y + 14);
+    ctx.fillText('by Ruikarou — Recipt order', W/2, y + 14);
     y += 22;
 
     /* ── Divider */
@@ -1449,7 +1449,7 @@ btnCheckout.addEventListener('click', async () => {
     rRect(ctx, PAD, y, INNER, INFO_H, 16); ctx.fill();
 
     const rows = [
-      ['Klien',    name],
+      ['Nama',    name],
       ['Platform', platform],
       ['Tanggal',  now],
       ['Lisensi',  licenseTag],
