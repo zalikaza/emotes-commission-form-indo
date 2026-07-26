@@ -387,6 +387,29 @@
   .emote-tile.selected { background: var(--card-deep); box-shadow: var(--glow); }
   .emote-tile.selected::before { opacity: 1; }
 
+  /* Number label on top-left */
+  .emote-num {
+    position: absolute;
+    top: 7px;
+    left: 9px;
+    font-family: 'Baloo 2', cursive;
+    font-size: .75rem;
+    font-weight: 800;
+    color: var(--text-soft);
+    background: rgba(255, 255, 255, 0.65);
+    padding: 1px 7px;
+    border-radius: var(--radius-pill);
+    z-index: 2;
+    pointer-events: none;
+    line-height: 1.2;
+    backdrop-filter: blur(2px);
+    transition: color .2s, background .2s;
+  }
+  .emote-tile.selected .emote-num {
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.88);
+  }
+
   /* The img fills the tile; scale happens inside overflow:hidden so box never moves */
   .emote-tile img {
     width: 85%;
@@ -1013,9 +1036,9 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const PRICE_PER_EMOTE      = 10;
-const MIN_EMOTES           = 5;
-const TOTAL_EMOTES         = 36;
+const PRICE_PER_EMOTE       = 10;
+const MIN_EMOTES            = 5;
+const TOTAL_EMOTES          = 36;
 const COMMERCIAL_MULTIPLIER = 1.5;
 
 const EMOTES_PATH = '';
@@ -1067,6 +1090,7 @@ function buildGrid() {
     tile.dataset.tile  = i;
 
     tile.innerHTML = `
+      <span class="emote-num">#${i}</span>
       <div class="emote-check">
         <svg viewBox="0 0 12 12"><polyline points="1.5,6 4.5,9 10.5,3"/></svg>
       </div>
@@ -1381,7 +1405,7 @@ btnCheckout.addEventListener('click', async () => {
     rRect(ctx, PAD, y, INNER, INFO_H, 16); ctx.fill();
 
     const rows = [
-      ['Nama',    name],
+      ['Nama',     name],
       ['Platform', platform],
       ['Tanggal',  now],
       ['Lisensi',  licenseTag],
